@@ -198,7 +198,7 @@ namespace Jackett.Indexers
 
             await ConfigureIfOK(loginCookies, result.Content != null && result.Content.Contains("logout.php"), () =>
             {
-                CookieHeader = string.Empty;
+                configData.CookieHeader = string.Empty;
                 throw new ExceptionWithConfigData("Failed", configData);
             });
 

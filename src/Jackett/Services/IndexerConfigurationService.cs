@@ -20,7 +20,7 @@ namespace Jackett.Services
         //{
         //    if (jsonConfig is JObject)
         //    {
-        //        configData.CookieHeader.Value = jsonConfig.Value<string>("cookies");
+        //        configData.CookieHeader = jsonConfig.Value<string>("cookies");
         //        configData.IncludeRaw.Value = jsonConfig.Value<bool>("raws");
         //        IsConfigured = true;
         //        SaveConfig();

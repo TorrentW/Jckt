@@ -62,7 +62,7 @@ namespace Jackett.Indexers
 
             var result = this.configData;
             var captcha = dom.Find(".g-recaptcha");
-            result.CookieHeader.Value = loginPage.Cookies;
+            result.CookieHeader = loginPage.Cookies;
             result.Captcha.SiteKey = captcha.Attr("data-sitekey");
             result.Captcha.Version = "2";
             return result;
@@ -80,7 +80,7 @@ namespace Jackett.Indexers
             if (!string.IsNullOrWhiteSpace(configData.Captcha.Cookie))
             {
                 // Cookie was manually supplied
-                CookieHeader = configData.Captcha.Cookie;
+                configData.CookieHeader = configData.Captcha.Cookie;
                 try
                 {
                     var results = await PerformQuery(new TorznabQuery());
@@ -100,7 +100,7 @@ namespace Jackett.Indexers
                 }
             }
 
-            var result = await RequestLoginAndFollowRedirect(SubmitLoginUrl, pairs, configData.CookieHeader.Value, true, null, LoginUrl);
+            var result = await RequestLoginAndFollowRedirect(SubmitLoginUrl, pairs, configData.CookieHeader, true, null, LoginUrl);
             await ConfigureIfOK(result.Cookies, result.Content.Contains("logout.php"), () =>
             {
                 var errorMessage = result.Content;
@@ -151,7 +151,7 @@ namespace Jackett.Indexers
                     var release = new ReleaseInfo();
                     release.MinimumRatio = 1;
                     release.MinimumSeedTime = 7 * 24 * 60 * 60;
-                    
+
                     var qRow = row.Cq();
                     var qCatLink = qRow.Find("a[href^=?cat]").First();
                     var qDetailsLink = qRow.Find("a[href^=details.php]").First();
@@ -172,7 +172,8 @@ namespace Jackett.Indexers
                     var sizeStr = qSize.Text();
                     release.Size = ReleaseInfo.GetBytes(sizeStr);
 
-                    if(qImdbLink.Length == 1) { 
+                    if (qImdbLink.Length == 1)
+                    {
                         var ImdbId = qImdbLink.Attr("href").Split('/').Last().Substring(2);
                         release.Imdb = ParseUtil.CoerceLong(ImdbId);
                     }

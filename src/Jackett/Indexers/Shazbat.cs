@@ -91,7 +91,7 @@ namespace Jackett.Indexers
             if (!response.Content.Contains("onclick=\"document.location='logout'\""))
             {
                 await ApplyConfiguration(null);
-                response.Request.Cookies = CookieHeader;
+                response.Request.Cookies = configData.CookieHeader;
                 return await webclient.GetString(response.Request);
             }
             return response;

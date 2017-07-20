@@ -115,7 +115,7 @@ namespace Jackett.Indexers
                 loginPage = await RequestStringWithCookies(loginPage.RedirectingTo, string.Empty);
             CQ cq = loginPage.Content;
             var result = this.configData;
-            result.CookieHeader.Value = loginPage.Cookies;
+            result.CookieHeader = loginPage.Cookies;
             result.Captcha.SiteKey = cq.Find(".g-recaptcha").Attr("data-sitekey");
             result.Captcha.Version = "2";
             return result;
@@ -133,7 +133,7 @@ namespace Jackett.Indexers
             if (!string.IsNullOrWhiteSpace(configData.Captcha.Cookie))
             {
                 // Cookie was manually supplied
-                CookieHeader = configData.Captcha.Cookie;
+                configData.CookieHeader = configData.Captcha.Cookie;
                 try
                 {
                     var results = await PerformQuery(new TorznabQuery());
@@ -153,7 +153,7 @@ namespace Jackett.Indexers
                 }
             }
 
-            var result = await RequestLoginAndFollowRedirect(LoginUrl, pairs, configData.CookieHeader.Value, true, null, LoginUrl);
+            var result = await RequestLoginAndFollowRedirect(LoginUrl, pairs, configData.CookieHeader, true, null, LoginUrl);
             await ConfigureIfOK(result.Cookies, result.Content != null && result.Content.Contains("logout.php"), () =>
             {
                 CQ dom = result.Content;

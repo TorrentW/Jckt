@@ -135,8 +135,8 @@ namespace Jackett.Indexers
                 { "login", "login" }
             };
             // Get inital cookies
-            CookieHeader = string.Empty;
-            var response = await RequestLoginAndFollowRedirect(LoginUrl, pairs, CookieHeader, true, null, LoginUrl);
+            configData.CookieHeader = string.Empty;
+            var response = await RequestLoginAndFollowRedirect(LoginUrl, pairs, configData.CookieHeader, true, null, LoginUrl);
 
             await ConfigureIfOK(response.Cookies, response.Content != null && response.Content.Contains("logout.php"), () =>
             {
@@ -176,7 +176,7 @@ namespace Jackett.Indexers
             var results = await RequestStringWithCookiesAndRetry(episodeSearchUrl);
             if (string.IsNullOrEmpty(results.Content))
             {
-                CookieHeader = string.Empty;
+                configData.CookieHeader = string.Empty;
                 var pairs = new Dictionary<string, string>
                 {
                     {"username", configData.Username.Value},
@@ -184,7 +184,7 @@ namespace Jackett.Indexers
                     {"langlang", null},
                     {"login", "login"}
                 };
-                var response = await RequestLoginAndFollowRedirect(LoginUrl, pairs, CookieHeader, true, null, LoginUrl);
+                var response = await RequestLoginAndFollowRedirect(LoginUrl, pairs, configData.CookieHeader, true, null, LoginUrl);
 
                 await ConfigureIfOK(response.Cookies, response.Content != null && response.Content.Contains("logout.php"), () =>
                 {

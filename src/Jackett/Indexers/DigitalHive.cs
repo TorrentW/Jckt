@@ -91,11 +91,11 @@ namespace Jackett.Indexers
 
         public override async Task<ConfigurationData> GetConfigurationForSetup()
         {
-            var loginPage = await RequestStringWithCookies(LoginUrl, configData.CookieHeader.Value);
+            var loginPage = await RequestStringWithCookies(LoginUrl, configData.CookieHeader);
             CQ cq = loginPage.Content;
             string recaptchaSiteKey = cq.Find(".g-recaptcha").Attr("data-sitekey");
             var result = this.configData;
-            result.CookieHeader.Value = loginPage.Cookies;
+            result.CookieHeader = loginPage.Cookies;
             result.Captcha.SiteKey = recaptchaSiteKey;
             result.Captcha.Version = "2";
             return result;
@@ -114,7 +114,7 @@ namespace Jackett.Indexers
             if (!string.IsNullOrWhiteSpace(configData.Captcha.Cookie))
             {
                 // Cookie was manually supplied
-                CookieHeader = configData.Captcha.Cookie;
+                configData.CookieHeader = configData.Captcha.Cookie;
                 try
                 {
                     var results = await PerformQuery(new TorznabQuery());
@@ -134,7 +134,7 @@ namespace Jackett.Indexers
                 }
             }
 
-            var result = await RequestLoginAndFollowRedirect(AjaxLoginUrl, pairs, configData.CookieHeader.Value, true, SiteLink, LoginUrl);
+            var result = await RequestLoginAndFollowRedirect(AjaxLoginUrl, pairs, configData.CookieHeader, true, SiteLink, LoginUrl);
 
             await ConfigureIfOK(result.Cookies, result.Content.Contains("logout.php"), () =>
             {
@@ -157,7 +157,7 @@ namespace Jackett.Indexers
             {
                 queryCollection.Add("c" + cat, "1");
             }
-            
+
             if (!string.IsNullOrWhiteSpace(searchString))
             {
                 queryCollection.Add("search", searchString);

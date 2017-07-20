@@ -353,9 +353,9 @@ namespace Jackett.Indexers
                 }
 
                 var LoginUrl = resolvePath(Login.Path).ToString();
-                configData.CookieHeader.Value = null;
+                configData.CookieHeader = null;
                 var loginResult = await RequestLoginAndFollowRedirect(LoginUrl, pairs, null, true, null, SiteLink, true);
-                configData.CookieHeader.Value = loginResult.Cookies;
+                configData.CookieHeader = loginResult.Cookies;
 
                 checkForError(loginResult, Definition.Login.Error);
             }
@@ -373,7 +373,7 @@ namespace Jackett.Indexers
                     if (!string.IsNullOrWhiteSpace(CaptchaConfigItem.Cookie))
                     {
                         // for remote users just set the cookie and return
-                        CookieHeader = CaptchaConfigItem.Cookie;
+                        configData.CookieHeader = CaptchaConfigItem.Cookie;
                         return true;
                     }
 
@@ -397,7 +397,7 @@ namespace Jackett.Indexers
                         }
                         else
                         {
-                            throw new ExceptionWithConfigData(string.Format("Login failed: Cloudflare clearance failed using cookies {0}: {1}", CookieHeader, ClearanceResult.Content), configData);
+                            throw new ExceptionWithConfigData(string.Format("Login failed: Cloudflare clearance failed using cookies {0}: {1}", configData.CookieHeader, ClearanceResult.Content), configData);
                         }
                     }
                     else
@@ -560,20 +560,20 @@ namespace Jackett.Indexers
 
                     headers.Add("Content-Type", "multipart/form-data; boundary=" + boundary);
                     var body = string.Join("\r\n", bodyParts);
-                    loginResult = await PostDataWithCookies(submitUrl.ToString(), pairs, configData.CookieHeader.Value, SiteLink, headers, body);
+                    loginResult = await PostDataWithCookies(submitUrl.ToString(), pairs, configData.CookieHeader, SiteLink, headers, body);
                 }
                 else
                 {
-                    loginResult = await RequestLoginAndFollowRedirect(submitUrl.ToString(), pairs, configData.CookieHeader.Value, true, null, LoginUrl, true);
+                    loginResult = await RequestLoginAndFollowRedirect(submitUrl.ToString(), pairs, configData.CookieHeader, true, null, LoginUrl, true);
                 }
 
-                configData.CookieHeader.Value = loginResult.Cookies;
+                configData.CookieHeader = loginResult.Cookies;
 
                 checkForError(loginResult, Definition.Login.Error);
             }
             else if (Login.Method == "cookie")
             {
-                configData.CookieHeader.Value = ((StringItem)configData.GetDynamic("cookie")).Value;
+                configData.CookieHeader = ((StringItem)configData.GetDynamic("cookie")).Value;
             }
             else if (Login.Method == "get")
             {
@@ -585,9 +585,9 @@ namespace Jackett.Indexers
                 }
 
                 var LoginUrl = resolvePath(Login.Path + "?" + queryCollection.GetQueryString()).ToString();
-                configData.CookieHeader.Value = null;
+                configData.CookieHeader = null;
                 var loginResult = await RequestStringWithCookies(LoginUrl, null, SiteLink);
-                configData.CookieHeader.Value = loginResult.Cookies;
+                configData.CookieHeader = loginResult.Cookies;
 
                 checkForError(loginResult, Definition.Login.Error);
             }
@@ -595,7 +595,7 @@ namespace Jackett.Indexers
             {
                 throw new NotImplementedException("Login method " + Definition.Login.Method + " not implemented");
             }
-            logger.Debug(string.Format("CardigannIndexer ({0}): Cookies after login: {1}", ID, CookieHeader));
+            logger.Debug(string.Format("CardigannIndexer ({0}): Cookies after login: {1}", ID, configData.CookieHeader));
             return true;
         }
 
@@ -663,9 +663,9 @@ namespace Jackett.Indexers
 
             var LoginUrl = resolvePath(Login.Path);
 
-            configData.CookieHeader.Value = null;
+            configData.CookieHeader = null;
             if (Login.Cookies != null)
-                configData.CookieHeader.Value = String.Join("; ", Login.Cookies);
+                configData.CookieHeader = String.Join("; ", Login.Cookies);
             landingResult = await RequestStringWithCookies(LoginUrl.AbsoluteUri, null, SiteLink);
 
             var htmlParser = new HtmlParser();
@@ -720,7 +720,7 @@ namespace Jackett.Indexers
 
             if (hasCaptcha && automaticlogin)
             {
-                configData.LastError.Value = "Got captcha during automatic login, please reconfigure manually";
+                configData.LastError = "Got captcha during automatic login, please reconfigure manually";
                 logger.Error(string.Format("CardigannIndexer ({0}): Found captcha during automatic login, aborting", ID));
                 return null;
             }

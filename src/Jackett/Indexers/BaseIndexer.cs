@@ -11,12 +11,11 @@ using Jackett.Utils;
 using Jackett.Utils.Clients;
 using AutoMapper;
 using Jackett.Models.IndexerConfig;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace Jackett.Indexers
 {
-    public abstract class BaseIndexer : IIndexer
+    public abstract class BaseIndexer : Observing, IIndexer
     {
         public static string GetIndexerID(Type type)
         {
@@ -37,25 +36,7 @@ namespace Jackett.Indexers
         protected IIndexerConfigurationService configurationService;
         protected IProtectionService protectionService;
 
-        protected ConfigurationData configData;
-
-        protected string CookieHeader
-        {
-            get { return configData.CookieHeader.Value; }
-            set { configData.CookieHeader.Value = value; }
-        }
-
-        public string LastError
-        {
-            get { return configData.LastError.Value; }
-            set
-            {
-                bool SaveNeeded = configData.LastError.Value != value && IsConfigured;
-                configData.LastError.Value = value;
-                if (SaveNeeded)
-                    SaveConfig();
-            }
-        }
+        public ConfigurationData configData { get; protected set; }
 
         public abstract TorznabCapabilities TorznabCaps { get; protected set; }
 
@@ -85,7 +66,7 @@ namespace Jackett.Indexers
 
         public virtual void ResetBaseConfig()
         {
-            CookieHeader = string.Empty;
+            configData.CookieHeader = string.Empty;
             IsConfigured = false;
         }
 
@@ -99,7 +80,7 @@ namespace Jackett.Indexers
             string legacyCookieHeader = (string)jsonConfig["cookie_header"];
             if (!string.IsNullOrEmpty(legacyCookieHeader))
             {
-                CookieHeader = legacyCookieHeader;
+                configData.CookieHeader = legacyCookieHeader;
             }
             else
             {
@@ -115,11 +96,11 @@ namespace Jackett.Indexers
                             legacyCookieHeader += "; ";
                         legacyCookieHeader += array[i];
                     }
-                    CookieHeader = legacyCookieHeader;
+                    configData.CookieHeader = legacyCookieHeader;
                 }
                 else if (jcookies != null)
                 {
-                    CookieHeader = (string)jcookies;
+                    configData.CookieHeader = (string)jcookies;
                 }
             }
         }
@@ -130,16 +111,22 @@ namespace Jackett.Indexers
             if (useProtectionService)
                 ps = protectionService;
             configData.LoadValuesFromJson(jsonConfig, ps);
-            if (string.IsNullOrWhiteSpace(configData.SiteLink.Value))
+            if (string.IsNullOrWhiteSpace(configData.SiteLink))
             {
-                configData.SiteLink.Value = DefaultSiteLink;
+                configData.SiteLink = DefaultSiteLink;
             }
-            if (!configData.SiteLink.Value.EndsWith("/", StringComparison.Ordinal))
-                configData.SiteLink.Value += "/";
+            if (!configData.SiteLink.EndsWith("/", StringComparison.Ordinal))
+                configData.SiteLink += "/";
 
             // check whether the site link is well-formatted
-            var siteUri = new Uri(configData.SiteLink.Value);
-            SiteLink = configData.SiteLink.Value;
+            var siteUri = new Uri(configData.SiteLink);
+            SiteLink = configData.SiteLink;
+
+            Observe(configData, (_) =>
+            {
+                if (IsConfigured)
+                    SaveConfig();
+            });
         }
 
         public void LoadFromSavedConfiguration(JToken jsonConfig)
@@ -162,7 +149,7 @@ namespace Jackett.Indexers
         {
             if (isLoggedin)
             {
-                CookieHeader = cookies;
+                configData.CookieHeader = cookies;
                 IsConfigured = true;
                 SaveConfig();
             }
@@ -264,7 +251,7 @@ namespace Jackett.Indexers
             var response = await RequestBytesWithCookiesAndRetry(requestLink, null, method, requestLink);
             if (response.Status != System.Net.HttpStatusCode.OK && response.Status != System.Net.HttpStatusCode.Continue && response.Status != System.Net.HttpStatusCode.PartialContent)
             {
-                logger.Error("Failed download cookies: " + this.CookieHeader);
+                logger.Error("Failed download cookies: " + configData.CookieHeader);
                 if (response.Content != null)
                     logger.Error("Failed download response:\n" + Encoding.UTF8.GetString(response.Content));
                 throw new Exception($"Remote server returned {response.Status.ToString()}" + (response.IsRedirect ? " => " + response.RedirectingTo : ""));
@@ -299,7 +286,7 @@ namespace Jackett.Indexers
             {
                 Url = url,
                 Type = RequestType.GET,
-                Cookies = CookieHeader,
+                Cookies = configData.CookieHeader,
                 Referer = referer,
                 Headers = headers,
                 Encoding = Encoding
@@ -338,7 +325,7 @@ namespace Jackett.Indexers
             {
                 Url = url,
                 Type = method,
-                Cookies = cookieOverride ?? CookieHeader,
+                Cookies = cookieOverride ?? configData.CookieHeader,
                 PostData = data,
                 Referer = referer,
                 Headers = headers,
@@ -356,7 +343,7 @@ namespace Jackett.Indexers
             {
                 Url = url,
                 Type = RequestType.POST,
-                Cookies = cookieOverride ?? CookieHeader,
+                Cookies = cookieOverride ?? configData.CookieHeader,
                 PostData = data,
                 Referer = referer,
                 Headers = headers,
@@ -442,7 +429,8 @@ namespace Jackett.Indexers
                 await DoFollowIfRedirect(response, referrer, overrideRedirectUrl, overrideCookies, accumulateCookies);
                 if (accumulateCookies)
                 {
-                    CookieHeader = ResolveCookies((CookieHeader != null && CookieHeader != "" ? CookieHeader + " " : "") + (overrideCookies != null && overrideCookies != "" ? overrideCookies + " " : "") + response.Cookies);
+                    var CookieHeader = configData.CookieHeader;
+                    configData.CookieHeader = ResolveCookies((CookieHeader != null && CookieHeader != "" ? CookieHeader + " " : "") + (overrideCookies != null && overrideCookies != "" ? overrideCookies + " " : "") + response.Cookies);
                     overrideCookies = response.Cookies = CookieHeader;
                 }
                 if (overrideCookies != null && response.Cookies == null)
@@ -454,6 +442,7 @@ namespace Jackett.Indexers
 
         private String ResolveCookies(String incomingCookies = "")
         {
+            var CookieHeader = configData.CookieHeader;
             var redirRequestCookies = (CookieHeader != null && CookieHeader != "" ? CookieHeader + " " : "") + incomingCookies;
             System.Text.RegularExpressions.Regex expression = new System.Text.RegularExpressions.Regex(@"([^\\,;\s]+)=([^=\\,;\s]*)");
             Dictionary<string, string> cookieDIctionary = new Dictionary<string, string>();
@@ -471,12 +460,10 @@ namespace Jackett.Indexers
         protected void UpdateCookieHeader(string newCookies, string cookieOverride = null)
         {
             string newCookieHeader = ResolveCookies((cookieOverride != null && cookieOverride != "" ? cookieOverride + " " : "") + newCookies);
-            if (CookieHeader != newCookieHeader)
+            if (configData.CookieHeader != newCookieHeader)
             {
-                logger.Debug(string.Format("updating Cookies {0} => {1}", CookieHeader, newCookieHeader));
-                CookieHeader = newCookieHeader;
-                if (IsConfigured)
-                    SaveConfig();
+                logger.Debug(string.Format("updating Cookies {0} => {1}", configData.CookieHeader, newCookieHeader));
+                configData.CookieHeader = newCookieHeader;
             }
         }
 
@@ -487,7 +474,7 @@ namespace Jackett.Indexers
                 var redirRequestCookies = "";
                 if (accumulateCookies)
                 {
-                    redirRequestCookies = ResolveCookies((CookieHeader != "" ? CookieHeader + " " : "") + (overrideCookies != null ? overrideCookies : ""));
+                    redirRequestCookies = ResolveCookies((configData.CookieHeader != "" ? configData.CookieHeader + " " : "") + (overrideCookies != null ? overrideCookies : ""));
                 }
                 else
                 {

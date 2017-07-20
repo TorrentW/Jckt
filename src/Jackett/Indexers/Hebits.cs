@@ -65,8 +65,8 @@ namespace Jackett.Indexers
             };
 
             // Get inital cookies
-            CookieHeader = string.Empty;
-            var result = await RequestLoginAndFollowRedirect(LoginPostUrl, pairs, CookieHeader, true, null, SiteLink);
+            configData.CookieHeader = string.Empty;
+            var result = await RequestLoginAndFollowRedirect(LoginPostUrl, pairs, configData.CookieHeader, true, null, SiteLink);
             await ConfigureIfOK(result.Cookies, result.Content != null && result.Content.Contains("OK"), () =>
             {
                 CQ dom = result.Content;
@@ -117,7 +117,7 @@ namespace Jackett.Indexers
                     release.MinimumSeedTime = 172800;
 
                     var titleParts = qRow.Find(".bTitle").Text().Split('/');
-                    if (titleParts.Length >= 2) 
+                    if (titleParts.Length >= 2)
                         release.Title = titleParts[1].Trim();
                     else
                         release.Title = titleParts[0].Trim();

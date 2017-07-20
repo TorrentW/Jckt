@@ -55,7 +55,7 @@ namespace Jackett.Indexers
             {
                 Url = LoginUrl
             });
-            CookieHeader = response.Cookies;
+            configData.CookieHeader = response.Cookies;
             var captchaImage = await RequestBytesWithCookies(CaptchaUrl);
             configData.CaptchaImage.Value = captchaImage.Content;
             configData.CaptchaCookie.Value = captchaImage.Cookies;

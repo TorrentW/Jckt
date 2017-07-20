@@ -59,8 +59,8 @@ namespace Jackett.Indexers
                 { "login", "Login" }
             };
 
-            CookieHeader = string.Empty;
-            var response = await RequestLoginAndFollowRedirect(LoginUrl, pairs, CookieHeader, true, null, LoginUrl);
+            configData.CookieHeader = string.Empty;
+            var response = await RequestLoginAndFollowRedirect(LoginUrl, pairs, configData.CookieHeader, true, null, LoginUrl);
 
             await ConfigureIfOK(response.Cookies, response.Content != null && response.Content.Contains("logout.php"), () =>
             {

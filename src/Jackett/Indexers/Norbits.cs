@@ -189,7 +189,7 @@ namespace Jackett.Indexers
             });
 
             Output("\nCookies saved for future uses...");
-            ConfigData.CookieHeader.Value = indexPage.Cookies + " " + response.Cookies + " ts_username=" + ConfigData.Username.Value;
+            configData.CookieHeader = indexPage.Cookies + " " + response.Cookies + " ts_username=" + ConfigData.Username.Value;
 
             Output("\n-> Login Success\n");
         }
@@ -260,7 +260,7 @@ namespace Jackett.Indexers
                 var request = BuildQuery(searchTerm, query, searchUrl);
 
                 // Getting results & Store content
-                var response = await RequestStringWithCookiesAndRetry(request, ConfigData.CookieHeader.Value);
+                var response = await RequestStringWithCookiesAndRetry(request, ConfigData.CookieHeader);
                 _fDom = response.Content;
 
                 try
@@ -554,7 +554,7 @@ namespace Jackett.Indexers
 
             // Request our first page
             LatencyNow();
-            var results = await RequestStringWithCookiesAndRetry(request, ConfigData.CookieHeader.Value, SearchUrl, _emulatedBrowserHeaders);
+            var results = await RequestStringWithCookiesAndRetry(request, ConfigData.CookieHeader, SearchUrl, _emulatedBrowserHeaders);
 
             // Return results from tracker
             return results;

@@ -88,21 +88,22 @@ namespace Jackett.Indexers
             CQ cq = loginPage.Content;
             var result = this.configData;
             CQ recaptcha = cq.Find(".g-recaptcha").Attr("data-sitekey");
-            if(recaptcha.Length != 0)   // recaptcha not always present in login form, perhaps based on cloudflare uid or just phase of the moon
+            if (recaptcha.Length != 0)   // recaptcha not always present in login form, perhaps based on cloudflare uid or just phase of the moon
             {
-                result.CookieHeader.Value = loginPage.Cookies;
+                result.CookieHeader = loginPage.Cookies;
                 result.Captcha.SiteKey = cq.Find(".g-recaptcha").Attr("data-sitekey");
                 result.Captcha.Version = "2";
                 return result;
-            } else
+            }
+            else
             {
                 var stdResult = new ConfigurationDataBasicLogin();
-                stdResult.SiteLink.Value = configData.SiteLink.Value;
+                stdResult.SiteLink = configData.SiteLink;
                 stdResult.Username.Value = configData.Username.Value;
                 stdResult.Password.Value = configData.Password.Value;
-                stdResult.CookieHeader.Value = loginPage.Cookies;
+                stdResult.CookieHeader = loginPage.Cookies;
                 return stdResult;
-            }           
+            }
         }
 
         public override async Task<IndexerConfigurationStatus> ApplyConfiguration(JToken configJson)
@@ -116,7 +117,7 @@ namespace Jackett.Indexers
 
             if (!string.IsNullOrWhiteSpace(configData.Captcha.Cookie))
             {
-                CookieHeader = configData.Captcha.Cookie;
+                configData.CookieHeader = configData.Captcha.Cookie;
                 try
                 {
                     var results = await PerformQuery(new TorznabQuery());
@@ -136,11 +137,11 @@ namespace Jackett.Indexers
                 }
             }
 
-            var response = await RequestLoginAndFollowRedirect(LoginUrl, pairs, configData.CookieHeader.Value, true, SearchUrl, StartPageUrl);
+            var response = await RequestLoginAndFollowRedirect(LoginUrl, pairs, configData.CookieHeader, true, SearchUrl, StartPageUrl);
             UpdateCookieHeader(response.Cookies);
             UpdateCookieHeader("mybbuser=;"); // add dummy cookie, otherwise we get logged out after each request
 
-            await ConfigureIfOK(configData.CookieHeader.Value, response.Content != null && response.Content.Contains("logout.php"), () =>
+            await ConfigureIfOK(configData.CookieHeader, response.Content != null && response.Content.Contains("logout.php"), () =>
             {
                 CQ dom = response.Content;
                 var messageEl = dom["div:has(h2)"].Last();
@@ -159,7 +160,7 @@ namespace Jackett.Indexers
             var searchString = query.GetQueryString();
 
             // search in normal + gems view
-            foreach (var view in new string[] {"0", "1"})
+            foreach (var view in new string[] { "0", "1" })
             {
                 var queryCollection = new NameValueCollection();
 
@@ -230,7 +231,7 @@ namespace Jackett.Indexers
                         var desc = qRow.Find("td:nth-child(2)");
                         desc.Find("a").Remove();
                         desc.Find("small").Remove(); // Remove release name (if enabled in the user cp)
-                        release.Description = desc.Text().Trim(new char[] {'-', ' '});
+                        release.Description = desc.Text().Trim(new char[] { '-', ' ' });
 
                         releases.Add(release);
                     }

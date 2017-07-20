@@ -1,4 +1,4 @@
-﻿using CsQuery;
+﻿﻿using CsQuery;
 using Jackett.Models;
 using Jackett.Services;
 using Jackett.Utils;
@@ -93,17 +93,17 @@ namespace Jackett.Indexers
             CQ recaptcha = cq.Find(".g-recaptcha").Attr("data-sitekey");
             if (recaptcha.Length != 0)
             {
-                result.CookieHeader.Value = loginPage.Cookies;
+                result.CookieHeader = loginPage.Cookies;
                 result.Captcha.SiteKey = cq.Find(".g-recaptcha").Attr("data-sitekey");
                 return result;
             }
             else
             {
                 var stdResult = new ConfigurationDataBasicLogin();
-                stdResult.SiteLink.Value = configData.SiteLink.Value;
+                stdResult.SiteLink = configData.SiteLink;
                 stdResult.Username.Value = configData.Username.Value;
                 stdResult.Password.Value = configData.Password.Value;
-                stdResult.CookieHeader.Value = loginPage.Cookies;
+                stdResult.CookieHeader = loginPage.Cookies;
                 return stdResult;
             }
         }
@@ -119,7 +119,7 @@ namespace Jackett.Indexers
 
             if (!string.IsNullOrWhiteSpace(configData.Captcha.Cookie))
             {
-                CookieHeader = configData.Captcha.Cookie;
+                configData.CookieHeader = configData.Captcha.Cookie;
                 try
                 {
                     var results = await PerformQuery(new TorznabQuery());
@@ -156,7 +156,7 @@ namespace Jackett.Indexers
             Dictionary<string, string> qParams = new Dictionary<string, string>();
             qParams.Add("cata", "yes");
             qParams.Add("sec", "jax");
-            
+
             List<string> catList = MapTorznabCapsToTrackers(query);
             foreach (string cat in catList)
             {
@@ -170,7 +170,7 @@ namespace Jackett.Indexers
 
             var results = await PostDataWithCookiesAndRetry(SearchUrl, qParams);
             List<ReleaseInfo> releases = ParseResponse(query, results.Content);
-            
+
             return releases;
         }
 

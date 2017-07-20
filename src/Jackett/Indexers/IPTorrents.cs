@@ -127,10 +127,10 @@ namespace Jackett.Indexers
             var loginPage = await RequestStringWithCookies(LoginUrl, string.Empty);
             CQ cq = loginPage.Content;
             var captcha = cq.Find(".g-recaptcha");
-            if(captcha.Any())
+            if (captcha.Any())
             {
                 var result = this.configData;
-                result.CookieHeader.Value = loginPage.Cookies;
+                result.CookieHeader = loginPage.Cookies;
                 result.Captcha.SiteKey = captcha.Attr("data-sitekey");
                 result.Captcha.Version = "2";
                 return result;
@@ -138,11 +138,11 @@ namespace Jackett.Indexers
             else
             {
                 var result = new ConfigurationDataBasicLogin();
-                result.SiteLink.Value = configData.SiteLink.Value;
+                result.SiteLink = configData.SiteLink;
                 result.Instructions.Value = configData.Instructions.Value;
                 result.Username.Value = configData.Username.Value;
                 result.Password.Value = configData.Password.Value;
-                result.CookieHeader.Value = loginPage.Cookies;
+                result.CookieHeader = loginPage.Cookies;
                 return result;
             }
         }
@@ -160,7 +160,7 @@ namespace Jackett.Indexers
 
             if (!string.IsNullOrWhiteSpace(configData.Captcha.Cookie))
             {
-                CookieHeader = configData.Captcha.Cookie;
+                configData.CookieHeader = configData.Captcha.Cookie;
                 try
                 {
                     var results = await PerformQuery(new TorznabQuery());
@@ -280,7 +280,7 @@ namespace Jackett.Indexers
                     var grabs = row.Cq().Find("td:nth-last-child(3)").Text();
                     release.Grabs = ParseUtil.CoerceInt(grabs);
 
-                    if(row.Cq().Find("span.t_tag_free_leech").Any())
+                    if (row.Cq().Find("span.t_tag_free_leech").Any())
                         release.DownloadVolumeFactor = 0;
                     else
                         release.DownloadVolumeFactor = 1;

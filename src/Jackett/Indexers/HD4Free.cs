@@ -95,11 +95,11 @@ namespace Jackett.Indexers
 
         public override async Task<ConfigurationData> GetConfigurationForSetup()
         {
-            var loginPage = await RequestStringWithCookies(LoginUrl, configData.CookieHeader.Value);
+            var loginPage = await RequestStringWithCookies(LoginUrl, configData.CookieHeader);
             CQ cq = loginPage.Content;
             string recaptchaSiteKey = cq.Find(".g-recaptcha").Attr("data-sitekey");
             var result = this.configData;
-            result.CookieHeader.Value = loginPage.Cookies;
+            result.CookieHeader = loginPage.Cookies;
             result.Captcha.SiteKey = recaptchaSiteKey;
             result.Captcha.Version = "2";
             return result;
@@ -119,7 +119,7 @@ namespace Jackett.Indexers
             if (!string.IsNullOrWhiteSpace(configData.Captcha.Cookie))
             {
                 // Cookie was manually supplied
-                CookieHeader = configData.Captcha.Cookie;
+                configData.CookieHeader = configData.Captcha.Cookie;
                 try
                 {
                     var results = await PerformQuery(new TorznabQuery());
@@ -150,7 +150,7 @@ namespace Jackett.Indexers
                     errorMessage = result.Content;
                 throw new ExceptionWithConfigData(errorMessage, configData);
             });
-            
+
             return IndexerConfigurationStatus.RequiresTesting;
         }
 
@@ -278,7 +278,7 @@ namespace Jackett.Indexers
             pairs.Add("visible", "1");
             pairs.Add("uid", "-1");
             pairs.Add("genre", "");
-            
+
             pairs.Add("cats", string.Join(",+", MapTorznabCapsToTrackers(query)));
 
             if (query.ImdbID != null)
@@ -325,7 +325,7 @@ namespace Jackett.Indexers
                     release.Description = row["genre"].ToString();
 
                     var poster = row["poster"].ToString();
-                    if(!string.IsNullOrWhiteSpace(poster))
+                    if (!string.IsNullOrWhiteSpace(poster))
                     {
                         var posterurl = poster;
                         if (!poster.StartsWith("http"))
@@ -353,7 +353,7 @@ namespace Jackett.Indexers
                     release.UploadVolumeFactor = 1;
 
                     releases.Add(release);
-                    
+
                 }
             }
             catch (Exception ex)

@@ -31,7 +31,7 @@ namespace Jackett.Indexers
 
         new ConfigurationDataBasicLoginWithRSSAndDisplay configData
         {
-            get {return (ConfigurationDataBasicLoginWithRSSAndDisplay)base.configData; }
+            get { return (ConfigurationDataBasicLoginWithRSSAndDisplay)base.configData; }
             set { base.configData = value; }
         }
 
@@ -133,7 +133,7 @@ namespace Jackett.Indexers
             CQ dom = loginPage.Content;
             CQ qCaptchaImg = dom.Find("img#regimage").First();
             if (qCaptchaImg.Length > 0)
-            { 
+            {
 
                 var CaptchaUrl = qCaptchaImg.Attr("src");
                 var captchaImage = await RequestBytesWithCookies(CaptchaUrl, loginPage.Cookies, RequestType.GET, LandingUrl);
@@ -208,16 +208,17 @@ namespace Jackett.Indexers
         {
             var releases = new List<ReleaseInfo>();
             var searchString = query.GetQueryString();
-            var prevCook = CookieHeader + "";
+            var prevCook = configData.CookieHeader + "";
 
             // If we have no query use the RSS Page as their server is slow enough at times!
             if (query.IsTest || string.IsNullOrWhiteSpace(searchString))
             {
-                
+
                 var rssPage = await RequestStringWithCookiesAndRetry(string.Format(RSSUrl, configData.RSSKey.Value));
                 try
                 {
-                    if (rssPage.Content.EndsWith("\0")) {
+                    if (rssPage.Content.EndsWith("\0"))
+                    {
                         rssPage.Content = rssPage.Content.Substring(0, rssPage.Content.Length - 1);
                     }
                     rssPage.Content = RemoveInvalidXmlChars(rssPage.Content);
@@ -264,7 +265,7 @@ namespace Jackett.Indexers
                     logger.Error(rssPage.Content);
                     throw ex;
                 }
-                
+
             }
             if (query.IsTest || !string.IsNullOrWhiteSpace(searchString))
             {
@@ -285,12 +286,12 @@ namespace Jackett.Indexers
                     { "password", configData.Password.Value }
                 };
 
-                var searchPage = await PostDataWithCookiesAndRetry(SearchUrl, searchParams, CookieHeader);
+                var searchPage = await PostDataWithCookiesAndRetry(SearchUrl, searchParams, configData.CookieHeader);
                 // Occasionally the cookies become invalid, login again if that happens
                 if (searchPage.IsRedirect)
                 {
                     await ApplyConfiguration(null);
-                    searchPage = await PostDataWithCookiesAndRetry(SearchUrl, searchParams, CookieHeader);
+                    searchPage = await PostDataWithCookiesAndRetry(SearchUrl, searchParams, configData.CookieHeader);
                 }
 
                 try
@@ -304,7 +305,7 @@ namespace Jackett.Indexers
 
                         var qDetails = qRow.Find("div > a[href*=\"details.php?id=\"]"); // details link, release name get's shortened if it's to long
                         var qTitle = qRow.Find("td:eq(1) .tooltip-content div:eq(0)"); // use Title from tooltip
-                        if(!qTitle.Any()) // fallback to Details link if there's no tooltip
+                        if (!qTitle.Any()) // fallback to Details link if there's no tooltip
                         {
                             qTitle = qDetails;
                         }
@@ -351,7 +352,7 @@ namespace Jackett.Indexers
                     OnParseError(searchPage.Content, ex);
                 }
             }
-            if (!CookieHeader.Trim().Equals(prevCook.Trim()))
+            if (!configData.CookieHeader.Trim().Equals(prevCook.Trim()))
             {
                 SaveConfig();
             }

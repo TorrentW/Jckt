@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Jackett.Models.IndexerConfig
 {
-    public class ConfigurationData
+    public class ConfigurationData : Observable<ConfigurationData>
     {
         const string PASSWORD_REPLACEMENT = "|||%%PREVJACKPASSWD%%|||";
         protected Dictionary<string, Item> dynamics = new Dictionary<string, Item>(); // list for dynamic items
@@ -23,13 +23,51 @@ namespace Jackett.Models.IndexerConfig
             Recaptcha
         }
 
-        public HiddenItem CookieHeader { get; private set; } = new HiddenItem { Name = "CookieHeader" };
-        public HiddenItem LastError { get; private set; } = new HiddenItem { Name = "LastError" };
-        public StringItem SiteLink { get; private set; } = new StringItem { Name = "Site Link" };
+        private HiddenItem CookieHeaderItem { get; set; } = new HiddenItem { Name = "CookieHeader" };
+        private HiddenItem LastErrorItem { get; set; } = new HiddenItem { Name = "LastError" };
+        private StringItem SiteLinkItem { get; set; } = new StringItem { Name = "Site Link" };
+
+        public string CookieHeader
+        {
+            get => CookieHeaderItem.Value;
+            set
+            {
+                if (value != CookieHeaderItem.Value)
+                {
+                    CookieHeaderItem.Value = value;
+                    Notify();
+                }
+            }
+        }
+
+        public string LastError
+        {
+            get => LastErrorItem.Value;
+            set
+            {
+                if (value != LastErrorItem.Value)
+                {
+                    LastErrorItem.Value = value;
+                    Notify();
+                }
+            }
+        }
+
+        public string SiteLink
+        {
+            get => SiteLinkItem.Value;
+            set
+            {
+                if (value != SiteLinkItem.Value)
+                {
+                    SiteLinkItem.Value = value;
+                    Notify();
+                }
+            }
+        }
 
         public ConfigurationData()
         {
-
         }
 
         public ConfigurationData(JToken json, IProtectionService ps)
@@ -37,7 +75,7 @@ namespace Jackett.Models.IndexerConfig
             LoadValuesFromJson(json, ps);
         }
 
-        public void LoadValuesFromJson(JToken json, IProtectionService ps= null)
+        public void LoadValuesFromJson(JToken json, IProtectionService ps = null)
         {
             if (json == null)
                 return;
@@ -158,8 +196,8 @@ namespace Jackett.Models.IndexerConfig
                 .Select(p => (Item)p.GetValue(this)).ToList();
 
             // remove/insert Site Link manualy to make sure it shows up first
-            properties.Remove(SiteLink);
-            properties.Insert(0, SiteLink);
+            properties.Remove(SiteLinkItem);
+            properties.Insert(0, SiteLinkItem);
 
             properties.AddRange(dynamics.Values);
 
@@ -184,7 +222,7 @@ namespace Jackett.Models.IndexerConfig
             {
                 return dynamics[ID];
             }
-            catch(KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
                 return null;
             }

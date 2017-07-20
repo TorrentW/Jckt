@@ -1441,7 +1441,7 @@ namespace Jackett.Indexers
             var LoginResultDocument = LoginResultParser.Parse(response.Content);
             var captchaimg = LoginResultDocument.QuerySelector("img[src^=\"//static.t-ru.org/captcha/\"]");
             if (captchaimg != null)
-            { 
+            {
                 var captchaImage = await RequestBytesWithCookies("https:" + captchaimg.GetAttribute("src"));
                 configData.CaptchaImage.Value = captchaImage.Content;
 
@@ -1478,7 +1478,7 @@ namespace Jackett.Indexers
                 cap_code_field = null;
             }
 
-            var result = await RequestLoginAndFollowRedirect(LoginUrl, pairs, CookieHeader, true, null, LoginUrl, true);
+            var result = await RequestLoginAndFollowRedirect(LoginUrl, pairs, configData.CookieHeader, true, null, LoginUrl, true);
             await ConfigureIfOK(result.Cookies, result.Content != null && result.Content.Contains("class=\"logged-in-as-uname\""), () =>
             {
                 var errorMessage = result.Content;

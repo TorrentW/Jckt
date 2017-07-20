@@ -235,7 +235,7 @@ namespace Jackett.Controllers
                     item["configured"] = indexer.IsConfigured;
                     item["site_link"] = indexer.SiteLink;
                     item["language"] = indexer.Language;
-                    item["last_error"] = indexer.LastError;
+                    item["last_error"] = indexer.configData.LastError;
                     item["potatoenabled"] = indexer.TorznabCaps.Categories.Select(c => c.ID).Any(i => PotatoController.MOVIE_CATS.Contains(i));
 
                     var caps = new JObject();
@@ -269,7 +269,7 @@ namespace Jackett.Controllers
                 await indexerService.TestIndexer(indexerString);
                 jsonReply["name"] = indexer.DisplayName;
                 jsonReply["result"] = "success";
-                indexer.LastError = null;
+                indexer.configData.LastError = null;
             }
             catch (Exception ex)
             {
@@ -280,7 +280,7 @@ namespace Jackett.Controllers
                 jsonReply["result"] = "error";
                 jsonReply["error"] = msg;
                 if (indexer != null)
-                    indexer.LastError = msg;
+                    indexer.configData.LastError = msg;
             }
             return Json(jsonReply);
         }

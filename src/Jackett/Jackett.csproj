@@ -383,6 +383,7 @@
     <Compile Include="Indexers\Feeds\BaseNewznabIndexer.cs" />
     <Compile Include="Indexers\Feeds\AnimeTosho.cs" />
     <Compile Include="Indexers\Feeds\BaseFeedIndexer.cs" />
+    <Compile Include="Utils\Reactive.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
